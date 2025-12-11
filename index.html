@@ -304,7 +304,14 @@
             • 캔버스를 클릭하여 셀을 켜거나 끌 수 있습니다<br>
             • 패턴을 선택하면 캔버스 중앙에 배치됩니다<br>
             • 규칙을 변경하여 다양한 창발 현상을 실험해보세요<br>
-            • 마우스로 드래그하면 여러 셀을 한번에 그릴 수 있습니다
+            • 마우스로 드래그하면 여러 셀을 한번에 그릴 수 있습니다<br>
+            <br>
+            <strong>🎨 생로병사 색상 시스템:</strong><br>
+            • <span style="color: #2196F3;">파란색</span>: 청년 (나이 1-5세대)<br>
+            • <span style="color: #00BFA5;">청록색</span>: 청장년 (6-15세대)<br>
+            • <span style="color: #FDD835;">노란색</span>: 중년 (16-30세대)<br>
+            • <span style="color: #FF7043;">주황색</span>: 장년 (31-50세대)<br>
+            • <span style="color: #EF5350;">빨간색</span>: 노년 (51세대 이상)
         </div>
     </div>
 
@@ -376,7 +383,8 @@
 
                         const newRow = (row + i + this.rows) % this.rows;
                         const newCol = (col + j + this.cols) % this.cols;
-                        count += this.grid[newRow][newCol];
+                        // 나이가 아니라 살아있는지 여부만 카운트
+                        count += this.grid[newRow][newCol] > 0 ? 1 : 0;
                     }
                 }
                 return count;
@@ -390,11 +398,11 @@
                         const neighbors = this.countNeighbors(row, col);
                         const cell = this.grid[row][col];
 
-                        if (cell === 1) {
-                            // 살아있는 셀
-                            newGrid[row][col] = this.surviveRule.includes(neighbors) ? 1 : 0;
+                        if (cell > 0) {
+                            // 살아있는 셀 - 생존하면 나이 증가
+                            newGrid[row][col] = this.surviveRule.includes(neighbors) ? cell + 1 : 0;
                         } else {
-                            // 죽은 셀
+                            // 죽은 셀 - 탄생하면 나이 1부터 시작
                             newGrid[row][col] = this.birthRule.includes(neighbors) ? 1 : 0;
                         }
                     }
@@ -425,16 +433,42 @@
                     this.ctx.stroke();
                 }
 
-                // 셀 그리기
+                // 셀 그리기 - 나이에 따라 색상 변화
                 for (let row = 0; row < this.rows; row++) {
                     for (let col = 0; col < this.cols; col++) {
-                        if (this.grid[row][col] === 1) {
+                        const age = this.grid[row][col];
+                        if (age > 0) {
+                            // 나이에 따른 색상 계산 (생로병사)
+                            let color1, color2;
+
+                            if (age <= 5) {
+                                // 청년: 밝은 파란색
+                                color1 = '#4FC3F7';
+                                color2 = '#2196F3';
+                            } else if (age <= 15) {
+                                // 청장년: 청록색 → 초록색
+                                color1 = '#26C6DA';
+                                color2 = '#00BFA5';
+                            } else if (age <= 30) {
+                                // 중년: 초록색 → 노란색
+                                color1 = '#66BB6A';
+                                color2 = '#FDD835';
+                            } else if (age <= 50) {
+                                // 장년: 노란색 → 주황색
+                                color1 = '#FFA726';
+                                color2 = '#FF7043';
+                            } else {
+                                // 노년: 빨간색 → 진한 빨간색
+                                color1 = '#EF5350';
+                                color2 = '#C62828';
+                            }
+
                             const gradient = this.ctx.createLinearGradient(
                                 col * this.cellSize, row * this.cellSize,
                                 (col + 1) * this.cellSize, (row + 1) * this.cellSize
                             );
-                            gradient.addColorStop(0, '#667eea');
-                            gradient.addColorStop(1, '#764ba2');
+                            gradient.addColorStop(0, color1);
+                            gradient.addColorStop(1, color2);
 
                             this.ctx.fillStyle = gradient;
                             this.ctx.fillRect(
@@ -456,7 +490,8 @@
                 let population = 0;
                 for (let row = 0; row < this.rows; row++) {
                     for (let col = 0; col < this.cols; col++) {
-                        population += this.grid[row][col];
+                        // 나이가 아니라 살아있는 셀의 개수만 카운트
+                        if (this.grid[row][col] > 0) population++;
                     }
                 }
                 document.getElementById('population').textContent = population;
