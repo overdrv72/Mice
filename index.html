@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conway's Game of Life - 창발 실험</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            color: #333;
+        }
+
+        #canvas {
+            border: 2px solid #667eea;
+            display: block;
+            margin: 20px auto;
+            background: #fff;
+            cursor: crosshair;
+            border-radius: 5px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f5f5;
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        input[type="range"] {
+            width: 150px;
+        }
+
+        input[type="text"] {
+            width: 60px;
+            padding: 5px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 120px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .rules-section {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .rules-section h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Conway's Game of Life</h1>
+    <p class="subtitle">창발(Emergence) 현상 실험 시뮬레이터</p>
+
+    <div class="container">
+        <canvas id="canvas" width="800" height="600"></canvas>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">세대</div>
+                <div class="stat-value" id="generation">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">살아있는 셀</div>
+                <div class="stat-value" id="population">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">FPS</div>
+                <div class="stat-value" id="fps">0</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn">시작</button>
+            <button id="stopBtn">정지</button>
+            <button id="stepBtn">한 스텝</button>
+            <button id="clearBtn">초기화</button>
+            <button id="randomBtn">랜덤 생성</button>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="speed">속도:</label>
+                <input type="range" id="speed" min="1" max="60" value="10">
+                <span id="speedValue">10</span> FPS
+            </div>
+
+            <div class="control-group">
+                <label for="cellSize">셀 크기:</label>
+                <input type="range" id="cellSize" min="5" max="20" value="10">
+                <span id="cellSizeValue">10</span> px
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="patterns">패턴:</label>
+                <select id="patterns">
+                    <option value="">-- 패턴 선택 --</option>
+                    <option value="glider">Glider (활공기)</option>
+                    <option value="blinker">Blinker (깜빡이)</option>
+                    <option value="toad">Toad (두꺼비)</option>
+                    <option value="beacon">Beacon (등대)</option>
+                    <option value="pulsar">Pulsar (펄서)</option>
+                    <option value="gliderGun">Glider Gun (활공기 발사기)</option>
+                    <option value="pentadecathlon">Pentadecathlon</option>
+                    <option value="rpentomino">R-pentomino (카오스)</option>
+                    <option value="acorn">Acorn (도토리)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="rules-section">
+            <h3>⚙️ 규칙 커스터마이징 (창발 실험)</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="birthRule">탄생 (Birth):</label>
+                    <input type="text" id="birthRule" value="3" placeholder="e.g., 3,6">
+                </div>
+                <div class="control-group">
+                    <label for="surviveRule">생존 (Survive):</label>
+                    <input type="text" id="surviveRule" value="2,3" placeholder="e.g., 2,3">
+                </div>
+                <button id="applyRules">규칙 적용</button>
+            </div>
+            <div class="info">
+                <strong>표준 Conway 규칙 (B3/S23):</strong> 생존=2,3 / 탄생=3<br>
+                <strong>실험해볼 규칙들:</strong><br>
+                • Day & Night (B3678/S34678): 대칭적 패턴<br>
+                • HighLife (B36/S23): Replicator 패턴 등장<br>
+                • Seeds (B2/S): 폭발적 성장<br>
+                • Life without Death (B3/S012345678): 죽지 않는 생명
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>💡 사용법:</strong><br>
+            • 캔버스를 클릭하여 셀을 켜거나 끌 수 있습니다<br>
+            • 패턴을 선택하면 캔버스 중앙에 배치됩니다<br>
+            • 규칙을 변경하여 다양한 창발 현상을 실험해보세요<br>
+            • 마우스로 드래그하면 여러 셀을 한번에 그릴 수 있습니다
+        </div>
+    </div>
+
+    <script>
+        class GameOfLife {
+            constructor(canvasId, cellSize = 10) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.cellSize = cellSize;
+                this.cols = Math.floor(this.canvas.width / cellSize);
+                this.rows = Math.floor(this.canvas.height / cellSize);
+
+                this.grid = this.createGrid();
+                this.running = false;
+                this.generation = 0;
+
+                // 규칙: Conway의 표준 규칙
+                this.birthRule = [3];
+                this.surviveRule = [2, 3];
+
+                this.setupMouseEvents();
+                this.lastFrameTime = 0;
+                this.fps = 0;
+            }
+
+            createGrid() {
+                return Array(this.rows).fill(null).map(() => Array(this.cols).fill(0));
+            }
+
+            setupMouseEvents() {
+                let isDrawing = false;
+
+                this.canvas.addEventListener('mousedown', (e) => {
+                    isDrawing = true;
+                    this.toggleCell(e);
+                });
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (isDrawing) {
+                        this.toggleCell(e);
+                    }
+                });
+
+                this.canvas.addEventListener('mouseup', () => {
+                    isDrawing = false;
+                });
+
+                this.canvas.addEventListener('mouseleave', () => {
+                    isDrawing = false;
+                });
+            }
+
+            toggleCell(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / this.cellSize);
+                const y = Math.floor((e.clientY - rect.top) / this.cellSize);
+
+                if (x >= 0 && x < this.cols && y >= 0 && y < this.rows) {
+                    this.grid[y][x] = this.grid[y][x] ? 0 : 1;
+                    this.render();
+                }
+            }
+
+            countNeighbors(row, col) {
+                let count = 0;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        if (i === 0 && j === 0) continue;
+
+                        const newRow = (row + i + this.rows) % this.rows;
+                        const newCol = (col + j + this.cols) % this.cols;
+                        count += this.grid[newRow][newCol];
+                    }
+                }
+                return count;
+            }
+
+            nextGeneration() {
+                const newGrid = this.createGrid();
+
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        const neighbors = this.countNeighbors(row, col);
+                        const cell = this.grid[row][col];
+
+                        if (cell === 1) {
+                            // 살아있는 셀
+                            newGrid[row][col] = this.surviveRule.includes(neighbors) ? 1 : 0;
+                        } else {
+                            // 죽은 셀
+                            newGrid[row][col] = this.birthRule.includes(neighbors) ? 1 : 0;
+                        }
+                    }
+                }
+
+                this.grid = newGrid;
+                this.generation++;
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 격자 그리기
+                this.ctx.strokeStyle = '#e0e0e0';
+                this.ctx.lineWidth = 0.5;
+
+                for (let i = 0; i <= this.rows; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, i * this.cellSize);
+                    this.ctx.lineTo(this.canvas.width, i * this.cellSize);
+                    this.ctx.stroke();
+                }
+
+                for (let i = 0; i <= this.cols; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(i * this.cellSize, 0);
+                    this.ctx.lineTo(i * this.cellSize, this.canvas.height);
+                    this.ctx.stroke();
+                }
+
+                // 셀 그리기
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        if (this.grid[row][col] === 1) {
+                            const gradient = this.ctx.createLinearGradient(
+                                col * this.cellSize, row * this.cellSize,
+                                (col + 1) * this.cellSize, (row + 1) * this.cellSize
+                            );
+                            gradient.addColorStop(0, '#667eea');
+                            gradient.addColorStop(1, '#764ba2');
+
+                            this.ctx.fillStyle = gradient;
+                            this.ctx.fillRect(
+                                col * this.cellSize + 1,
+                                row * this.cellSize + 1,
+                                this.cellSize - 2,
+                                this.cellSize - 2
+                            );
+                        }
+                    }
+                }
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                document.getElementById('generation').textContent = this.generation;
+
+                let population = 0;
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        population += this.grid[row][col];
+                    }
+                }
+                document.getElementById('population').textContent = population;
+            }
+
+            clear() {
+                this.grid = this.createGrid();
+                this.generation = 0;
+                this.render();
+            }
+
+            randomize() {
+                for (let row = 0; row < this.rows; row++) {
+                    for (let col = 0; col < this.cols; col++) {
+                        this.grid[row][col] = Math.random() > 0.7 ? 1 : 0;
+                    }
+                }
+                this.render();
+            }
+
+            placePattern(pattern, offsetX = 0, offsetY = 0) {
+                const centerX = Math.floor(this.cols / 2) + offsetX;
+                const centerY = Math.floor(this.rows / 2) + offsetY;
+
+                for (let i = 0; i < pattern.length; i++) {
+                    for (let j = 0; j < pattern[i].length; j++) {
+                        const row = centerY + i - Math.floor(pattern.length / 2);
+                        const col = centerX + j - Math.floor(pattern[i].length / 2);
+
+                        if (row >= 0 && row < this.rows && col >= 0 && col < this.cols) {
+                            this.grid[row][col] = pattern[i][j];
+                        }
+                    }
+                }
+                this.render();
+            }
+
+            setCellSize(size) {
+                this.cellSize = size;
+                this.cols = Math.floor(this.canvas.width / size);
+                this.rows = Math.floor(this.canvas.height / size);
+                const wasRunning = this.running;
+                if (wasRunning) this.running = false;
+                this.clear();
+                if (wasRunning) this.running = true;
+            }
+
+            setRules(birth, survive) {
+                this.birthRule = birth;
+                this.surviveRule = survive;
+            }
+        }
+
+        // 패턴 정의
+        const patterns = {
+            glider: [
+                [0, 1, 0],
+                [0, 0, 1],
+                [1, 1, 1]
+            ],
+            blinker: [
+                [1, 1, 1]
+            ],
+            toad: [
+                [0, 1, 1, 1],
+                [1, 1, 1, 0]
+            ],
+            beacon: [
+                [1, 1, 0, 0],
+                [1, 1, 0, 0],
+                [0, 0, 1, 1],
+                [0, 0, 1, 1]
+            ],
+            pulsar: [
+                [0,0,1,1,1,0,0,0,1,1,1,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [1,0,0,0,0,1,0,1,0,0,0,0,1],
+                [1,0,0,0,0,1,0,1,0,0,0,0,1],
+                [1,0,0,0,0,1,0,1,0,0,0,0,1],
+                [0,0,1,1,1,0,0,0,1,1,1,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,1,1,0,0,0,1,1,1,0,0],
+                [1,0,0,0,0,1,0,1,0,0,0,0,1],
+                [1,0,0,0,0,1,0,1,0,0,0,0,1],
+                [1,0,0,0,0,1,0,1,0,0,0,0,1],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,1,1,0,0,0,1,1,1,0,0]
+            ],
+            gliderGun: [
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+                [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+                [1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            ],
+            pentadecathlon: [
+                [0,0,1,0,0,0,0,1,0,0],
+                [1,1,0,1,1,1,1,0,1,1],
+                [0,0,1,0,0,0,0,1,0,0]
+            ],
+            rpentomino: [
+                [0,1,1],
+                [1,1,0],
+                [0,1,0]
+            ],
+            acorn: [
+                [0,1,0,0,0,0,0],
+                [0,0,0,1,0,0,0],
+                [1,1,0,0,1,1,1]
+            ]
+        };
+
+        // 게임 초기화
+        const game = new GameOfLife('canvas', 10);
+        let animationId = null;
+        let targetFPS = 10;
+        let frameInterval = 1000 / targetFPS;
+        let lastFrameTime = performance.now();
+
+        function gameLoop(currentTime) {
+            if (!game.running) return;
+
+            const deltaTime = currentTime - lastFrameTime;
+
+            if (deltaTime >= frameInterval) {
+                game.nextGeneration();
+                game.render();
+
+                // FPS 계산
+                game.fps = Math.round(1000 / deltaTime);
+                document.getElementById('fps').textContent = game.fps;
+
+                lastFrameTime = currentTime - (deltaTime % frameInterval);
+            }
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // 컨트롤 이벤트
+        document.getElementById('startBtn').addEventListener('click', function() {
+            if (!game.running) {
+                game.running = true;
+                this.classList.add('active');
+                document.getElementById('stopBtn').classList.remove('active');
+                lastFrameTime = performance.now();
+                gameLoop(lastFrameTime);
+            }
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', function() {
+            game.running = false;
+            document.getElementById('startBtn').classList.remove('active');
+            this.classList.add('active');
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
+
+        document.getElementById('stepBtn').addEventListener('click', () => {
+            game.nextGeneration();
+            game.render();
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            game.clear();
+        });
+
+        document.getElementById('randomBtn').addEventListener('click', () => {
+            game.randomize();
+        });
+
+        document.getElementById('speed').addEventListener('input', function() {
+            targetFPS = parseInt(this.value);
+            frameInterval = 1000 / targetFPS;
+            document.getElementById('speedValue').textContent = this.value;
+        });
+
+        document.getElementById('cellSize').addEventListener('input', function() {
+            const size = parseInt(this.value);
+            game.setCellSize(size);
+            document.getElementById('cellSizeValue').textContent = this.value;
+        });
+
+        document.getElementById('patterns').addEventListener('change', function() {
+            const patternName = this.value;
+            if (patternName && patterns[patternName]) {
+                game.clear();
+                game.placePattern(patterns[patternName]);
+            }
+            this.value = '';
+        });
+
+        document.getElementById('applyRules').addEventListener('click', () => {
+            const birthInput = document.getElementById('birthRule').value;
+            const surviveInput = document.getElementById('surviveRule').value;
+
+            const birth = birthInput.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+            const survive = surviveInput.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+
+            game.setRules(birth, survive);
+            alert(`새 규칙 적용!\nBirth: ${birth.join(',')}\nSurvive: ${survive.join(',')}`);
+        });
+
+        // 초기 렌더링
+        game.render();
+    </script>
+</body>
+</html>
