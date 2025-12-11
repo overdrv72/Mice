@@ -94,35 +94,45 @@
         }
 
         input[type="range"] {
-            width: 150px;
-            height: 6px;
+            width: 200px;
+            height: 10px;
             -webkit-appearance: none;
             appearance: none;
-            background: #ddd;
+            background: linear-gradient(to right, #ddd 0%, #667eea 100%);
             outline: none;
-            border-radius: 3px;
+            border-radius: 5px;
             cursor: pointer;
+            border: 2px solid #999;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 25px;
+            height: 25px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: grab;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            border: 3px solid white;
         }
 
         input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: 25px;
+            height: 25px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: grab;
+            border: 3px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+        }
+
+        input[type="range"]::-moz-range-thumb:active {
+            cursor: grabbing;
         }
 
         input[type="range"]::-webkit-slider-thumb:hover {
